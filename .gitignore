@@ -6,3 +6,6 @@ __pycache__/
 *.pyc
 .venv/
 .ipynb_checkpoints/
+
+# Personal interview-prep notes -- not for public/recruiter viewing
+LEARNING_NOTES.md

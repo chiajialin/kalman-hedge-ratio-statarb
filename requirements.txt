@@ -4,3 +4,6 @@ statsmodels
 scikit-learn
 matplotlib
 yfinance
+nbformat
+nbclient
+ipykernel

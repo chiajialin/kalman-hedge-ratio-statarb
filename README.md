@@ -1,6 +1,23 @@
 # Project: Kalman-Filtered Dynamic Statistical Arbitrage — Testing SMT Divergence on ES/NQ
 
-## Status: Anchor project (primary). Second project (Regime-Gated VRP Harvesting) sits behind it, sharing infrastructure.
+## Status: Phase 1 complete. Phase 2 (intraday) explicitly descoped — see note below.
+
+**Current state:** Phase 1 (Sections 1-6 below) is finished — cointegration, OU
+half-life, Kalman-filtered walk-forward backtest, block-bootstrap significance,
+parameter sensitivity, and a multi-pair generalisation test (ES/YM, NQ/YM alongside
+ES/NQ). Full results and the honest final conclusion live in
+`notebooks/pairs_trading_analysis.ipynb` and `LEARNING_NOTES.md` (Stages 1-11).
+
+**Phase 2 (Section 5/9 below, the intraday push) was deliberately not attempted**,
+not just deprioritised: reliable multi-year intraday history for these instruments
+isn't available from the same data source used throughout (`fetch_data.py`, Yahoo's
+daily chart API — intraday endpoints there are windowed to weeks/months, not years),
+and a fair test needs its own half-life re-derivation and realistic bid-ask/slippage
+cost modelling rather than reusing the daily pipeline's constants. That makes it a
+genuinely separate project phase, not a quick extension, and it was cut given the
+project's timeline rather than left as an ambiguous stretch goal. Sections 5, 9, and
+10 below are kept as-written for the original plan and honest history of intent, not
+as a description of what was actually built.
 
 ---
 
@@ -62,6 +79,9 @@ The ES/NQ relationship genuinely drifts (e.g. with sector rotation between tech-
 
 ## 5. Two-Phase Structure
 
+*(As originally planned — see the Status note at the top: Phase 2 was ultimately
+descoped, not executed. Kept below for honest history of intent and reasoning.)*
+
 The chosen approach is **"phenomenon first cleanly, then push to intraday and show where it breaks down."** This is structurally the strongest version because the *breakdown is the finding*: a strategy that works at daily but decays toward intraday isolates the exact point where costs, microstructure, and execution friction consume the edge. That demonstrates an edge is not binary but frequency- and cost-dependent — exactly how a real desk evaluates tradeability. The two-phase structure is the mechanism that generates the project's single most impressive insight.
 
 **Discipline note (named risk):** "Do both" is the version most exposed to scope creep. The failure mode is that Phase 1 never reaches a defensible standard because Phase 2 is shinier. **Phase 1 must be genuinely interview-ready before Phase 2 begins** — a complete, defensible result on its own, such that if time runs out, there is still a finished project. Phase 2 is the upgrade, not the goal.
@@ -116,6 +136,11 @@ This Kalman/SMT project is the **anchor** — it carries the personal origin sto
 
 ## 9. Tools & Stack
 
+*(As originally planned; the Kaggle minute-data line below was never pulled in — Phase
+2 was descoped, see Status note at the top. What was actually used: pandas, numpy,
+statsmodels, a hand-rolled Kalman filter, matplotlib, and Yahoo's daily chart API via
+`fetch_data.py`.)*
+
 - **Python** (primary): pandas, numpy; `statsmodels` (cointegration / Engle-Granger); a Kalman implementation (`pykalman` or hand-rolled); scikit-learn for benchmark regressions; matplotlib for the edge-vs-frequency curve.
 - **Data:** Kaggle-type ES/NQ 1-minute OHLCV (Dec 2022–Dec 2025); free daily data as fallback.
 - **Evaluation:** walk-forward validation; risk-adjusted metrics (Sharpe, max drawdown); transaction-cost and slippage modelling.
@@ -124,4 +149,16 @@ This Kalman/SMT project is the **anchor** — it carries the personal origin sto
 
 ## 10. Likely / Acceptable Outcomes (set expectations honestly)
 
+*(Original planning framing, written before Phase 2 was descoped — see the actual
+outcome below.)*
+
 The credible, impressive outcome is NOT "I found a money-printing strategy." It is most likely: *the divergence-reversion phenomenon is statistically real at lower frequencies, but the tradeable edge decays and is largely consumed by transaction costs and microstructure frictions as frequency increases toward the intraday timeframe retail SMT traders actually use.* Reporting this honestly — with the edge-vs-frequency curve as evidence — is more impressive than a fabricated positive result, and demonstrates exactly the judgment quant desks value.
+
+**What was actually found (Phase 1 only, daily frequency):** a modest,
+borderline-significant Kalman-filtered edge on ES/NQ (walk-forward Sharpe 0.31,
+bootstrap p≈0.08) that does **not** clearly generalise to ES/YM or NQ/YM under the
+same fixed methodology — Kalman's Sharpe collapses to ~0 on both. No edge-vs-frequency
+curve was produced, since Phase 2 wasn't attempted. The honest conclusion is a
+partially-confirmed, single-pair-strongest result rather than the frequency-decay
+narrative originally hypothesised — see `LEARNING_NOTES.md` Stage 11 and the
+notebook's Section 13 for the full reasoning.
