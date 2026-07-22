@@ -122,7 +122,7 @@ def run_fold(nq_log: pd.Series, es_log: pd.Series,
     ret_roll    = compute_returns(pos_roll_aligned, full_nq, full_es, beta_roll, COST_BPS).loc[test_index]
 
     # --- Kalman leg: filter warmed up continuously over full span before test starts ---
-    beta_kalman = kalman_hedge_ratio(full_nq, full_es, alpha, q_kalman, r_kalman)
+    beta_kalman = kalman_hedge_ratio(full_nq, full_es, alpha, q_kalman, r_kalman, initial_beta=beta)
     spread_kal  = build_spread(full_nq, full_es, beta_kalman, alpha)
     z_kal       = zscore(spread_kal, window).loc[test_index]
     pos_kal     = generate_signals(z_kal, entry_threshold, exit_threshold)

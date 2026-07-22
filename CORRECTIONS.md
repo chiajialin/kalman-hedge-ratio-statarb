@@ -41,6 +41,18 @@ treatment as fixes A-D.
 - **Fix D — Kalman R mislabeled** (`kalman_filter.py`, `walk_forward.py`): `R` was set
   to the OU/AR(1) innovation variance (`sigma**2`), not the cointegrating regression's
   residual variance (`Var(spread)`) as the docstring claimed — off by ~62x.
+- **Smaller fixes (no separate letter, bundled as one commit):**
+  - Turnover in `compute_metrics` was labelled "round trips" but counted raw position
+    changes (2 per round trip, since entry and exit each count once) -- divided by 2.
+  - `beta[0]` in `kalman_hedge_ratio` was a comment-mislabelled "OLS beta" that was
+    actually `log(NQ)/log(ES)` at the first observation. Added an `initial_beta`
+    parameter and pass the real `fit_ols()` beta from every caller. Zero effect on
+    results (verified: identical to Fix D's snapshot), since the 700-day fit-window
+    runway already burns off any influence of the seed before the test period starts.
+  - Checked, not changed: the review's "flip undercharged ~4x" cost-model claim
+    doesn't apply here -- verified directly that position changes are always
+    magnitude 1 across all three legs (`generate_signals` always exits through 0
+    before reversing, so a direct 2-unit flip structurally cannot occur).
 
 ## Pre-fix numbers (verbatim, before any correction)
 

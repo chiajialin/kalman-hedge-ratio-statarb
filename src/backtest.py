@@ -77,7 +77,11 @@ def compute_metrics(returns: pd.Series, position: pd.Series) -> dict:
     cumulative_equity = (1 + returns).cumprod()
     max_drawdown      = (cumulative_equity / cumulative_equity.cummax() - 1).min()
     hit_rate          = (returns[returns != 0] > 0).mean()
-    turnover          = position.diff().abs().sum() / (len(position) / 252)
+    # Each round trip is two unit position changes (0->+-1 entry, +-1->0 exit) --
+    # generate_signals always exits through 0 before reversing, so a direct 2-unit
+    # flip never happens here. Divide by 2 so this actually counts round trips,
+    # not raw position changes.
+    turnover          = position.diff().abs().sum() / 2 / (len(position) / 252)
 
     print(f"Annualised Sharpe : {annual_sharpe:.4f}")
     print(f"Max Drawdown      : {max_drawdown:.4f}")
@@ -117,7 +121,7 @@ if __name__ == "__main__":
     # R = variance of the cointegrating regression's own residuals (the spread),
     # not the OU/AR(1) innovation variance -- see CORRECTIONS.md Fix D.
     R = spread.var()
-    beta_kalman   = kalman_hedge_ratio(nq_log, es_log, ALPHA, Q, R)
+    beta_kalman   = kalman_hedge_ratio(nq_log, es_log, ALPHA, Q, R, initial_beta=BETA)
     spread_kalman = build_spread(nq_log, es_log, beta_kalman, ALPHA)
     z_kal         = zscore(spread_kalman, window)
     pos_kal       = generate_signals(z_kal, ENTRY_THRESHOLD, EXIT_THRESHOLD)
