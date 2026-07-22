@@ -2,6 +2,14 @@ data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+# Committed for reproducibility -- Yahoo's chart API revises history, so the exact
+# CSVs this project's numbers were computed from need to be pinned, not re-fetched.
+!data/raw/es_daily.csv
+!data/raw/nq_daily.csv
+!data/raw/ym_daily.csv
+!data/raw/rty_daily.csv
+!data/processed/sensitivity_sweep.png
+!data/processed/sensitivity_heatmap.png
 __pycache__/
 *.pyc
 .venv/
