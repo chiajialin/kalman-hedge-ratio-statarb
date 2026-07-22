@@ -106,7 +106,7 @@ end-to-end).
 
 ## Limitations
 
-- Only 3 walk-forward folds (~830 out-of-sample days) — a real constraint from the
+- Only 3 walk-forward folds (931 out-of-sample days: 350 + 350 + 231) — a real constraint from the
   spread's ~68-day half-life relative to the available sample, not a design choice.
 - Daily frequency only. SMT divergence is, in its retail form, an intraday signal;
   testing it at that frequency was considered and explicitly descoped, not left
