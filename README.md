@@ -8,9 +8,14 @@ once formalised rigorously, rather than an eyeballed chart pattern.
 
 **No.** Across three hedge-ratio estimators (static OLS, rolling OLS, Kalman filter)
 and three cointegrated index-future pairs (ES/NQ, ES/YM, NQ/YM), tested walk-forward
-with transaction costs, no result reaches conventional statistical significance. The
-closest is a Kalman-filtered spread on ES/NQ (Sharpe 0.28, bootstrap p≈0.25) — a
-positive point estimate, not a significant one.
+with transaction costs, the Kalman filter — the project's focal method — shows no
+statistically significant edge on any pair. Its best result is ES/NQ (Sharpe 0.28,
+bootstrap p≈0.25): a positive point estimate, not a significant one. One cell in the
+full nine-test grid is nominally significant — rolling OLS on ES/YM (Sharpe 1.36,
+p=0.002, low enough to survive even a Bonferroni correction across all nine tests) —
+but the same estimator flips to strongly negative on NQ/YM (Sharpe -0.98): the
+signature of a high-variance beta estimator getting lucky against one realised price
+path, not a replicating edge (see Results).
 
 This is a corrected result. An external code review found four real bugs in the
 pipeline after an earlier version of this analysis had reported a modest,
