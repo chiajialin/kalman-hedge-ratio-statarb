@@ -6,7 +6,7 @@
 half-life, Kalman-filtered walk-forward backtest, block-bootstrap significance,
 parameter sensitivity, and a multi-pair generalisation test (ES/YM, NQ/YM alongside
 ES/NQ). Full results and the honest final conclusion live in
-`notebooks/pairs_trading_analysis.ipynb` and `LEARNING_NOTES.md` (Stages 1-11).
+`notebooks/pairs_trading_analysis.ipynb`, which is fully self-contained.
 
 **Phase 2 (Section 5/9 below, the intraday push) was deliberately not attempted**,
 not just deprioritised: reliable multi-year intraday history for these instruments
@@ -160,5 +160,6 @@ bootstrap p≈0.08) that does **not** clearly generalise to ES/YM or NQ/YM under
 same fixed methodology — Kalman's Sharpe collapses to ~0 on both. No edge-vs-frequency
 curve was produced, since Phase 2 wasn't attempted. The honest conclusion is a
 partially-confirmed, single-pair-strongest result rather than the frequency-decay
-narrative originally hypothesised — see `LEARNING_NOTES.md` Stage 11 and the
-notebook's Section 13 for the full reasoning.
+narrative originally hypothesised — see the notebook's Section 13 for the full
+reasoning. (Note: these specific numbers are mid-correction as of this writing — see
+the notebook's Corrections section for the current, verified figures.)
