@@ -135,3 +135,24 @@ results on the other two pairs, already weak at baseline, got uniformly worse af
 correction. Rolling OLS remains the most unstable across pairs (still swinging from a
 strongly significant +1.36 to a strongly negative -0.98 to -0.19-ish depending on
 pair) -- if anything, more evidence for noise than before.
+
+## Sensitivity sweep, rerun on the corrected pipeline (Q range recentred per above)
+
+The original sensitivity story (Stage 10 / notebook Section 9) doesn't survive either:
+
+- **Q_KALMAN** no longer shows a clean ramp-then-plateau. The middle of the recentred
+  range (~3e-5 to ~6e-4) is noisy, bouncing between slightly negative and modestly
+  positive Sharpe, before settling into a new plateau above ~8e-4 (Sharpe~0.30,
+  p~0.18 -- still not significant). The actual default (1e-5) sits at the noisy low
+  end: Sharpe 0.2821, p=0.2475.
+- **ENTRY_THRESHOLD** no longer shows the sharp cliff at ~1.7 with consistently
+  positive, sometimes-significant results above it. Now: negative-to-flat from 1.0
+  through 1.8, a brief positive patch at 1.9-2.3 (best single point: 1.9, Sharpe
+  0.36, p=0.13 -- still short of even 10% significance), noisy again through 3.0.
+  **No point in the entire swept range reaches conventional significance.**
+
+Honest reframe for the write-up: the old story was "mostly robust (Q) with one known
+fragility (ENTRY_THRESHOLD)." The corrected story is closer to "no combination of
+these two parameters, across the ranges tested, produces a statistically significant
+result" -- consistent with, not contradicted by, Fix D's finding at the single
+default configuration.
