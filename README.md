@@ -133,6 +133,21 @@ end-to-end).
   The largest one-day spread moves in this sample are macro events (Mar 2020,
   Nov 2020), not roll dates, and both legs roll on the same dates so gaps partially
   cancel in the spread — but back-adjusted contracts would be the rigorous fix.
+- The whole pipeline assumes regime stability that the 2020-2026 sample (COVID
+  crash, rate-hike bear, mega-cap AI rally) does not obviously grant: Engle-Granger
+  fits one (alpha, beta) across all regimes -- ES/NQ's marginal p=0.088 could
+  reflect regime-mixing as easily as a weak but stable relationship, the same
+  mechanism this project already invokes to explain RTY's rejection; the Kalman
+  filter's constant Q assumes beta drifts at one speed in all environments, though
+  the sector-rotation story motivating the drift is itself episodic; and the block
+  bootstrap resamples blocks across regime boundaries as if exchangeable. With only
+  3 folds, the walk-forward Sharpe is an average over regimes, not a result shown
+  to be robust across them -- so this design cannot distinguish a true null from
+  regime-conditional effects that net out. Regime-conditioning (classify first,
+  estimate within-regime) is real follow-on work, not a quick extension: with 931
+  OOS days, splitting by regime leaves too little data per state to test anything,
+  and post-hoc regime labels chosen after seeing results would reintroduce exactly
+  the selection bias the rest of the pipeline avoids.
 
 ## Reproducing this
 
