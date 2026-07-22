@@ -99,4 +99,27 @@ To be populated from `data/processed/snapshot_*.csv` after each commit in Step 3
 | + Fix A (lag) | 0.2764 | 0.1920 | Sharpe barely moved, p-value alone crossed above the 10% threshold |
 | + Fix B (beta look-ahead) | 0.2818 | 0.1854 | small movement, as expected for a same-day-only look-ahead |
 | + Fix C (EG critical values) | 0.2818 | 0.1854 | unchanged, as expected -- this fix only touches the cointegration screen, not the walk-forward table |
-| + Fix D (R correction) | TBD | TBD | expected to move the most |
+| + Fix D (R correction) | 0.2821 | 0.2486 | Sharpe barely moved (contrary to the naive expectation that 62x larger R would collapse Kalman toward static OLS); p-value moved enough to fail even the 10% bar |
+
+### Full cross-pair picture after all four fixes
+
+| Pair | Method | Sharpe (baseline &rarr; corrected) | p-value (baseline &rarr; corrected) |
+|------|--------|-------------------------------------|----------------------------------------|
+| ES/NQ | Static OLS | -0.1756 &rarr; -0.1942 | 0.6966 &rarr; 0.7384 |
+| ES/NQ | Rolling OLS 60d | 0.3927 &rarr; 0.6325 | 0.2152 &rarr; 0.1142 |
+| ES/NQ | Kalman | 0.3096 &rarr; 0.2821 | 0.0770 &rarr; 0.2486 |
+| ES/YM | Static OLS | -0.1520 &rarr; -0.3683 | 0.7896 &rarr; 0.9150 |
+| ES/YM | Rolling OLS 60d | 1.1374 &rarr; 1.3615 | 0.0068 &rarr; 0.0022 |
+| ES/YM | Kalman | -0.0263 &rarr; -0.4582 | 0.5150 &rarr; 0.8956 |
+| NQ/YM | Static OLS | 0.2468 &rarr; 0.0142 | 0.3956 &rarr; 0.5816 |
+| NQ/YM | Rolling OLS 60d | -0.8850 &rarr; -0.9750 | 0.9310 &rarr; 0.9486 |
+| NQ/YM | Kalman | -0.0230 &rarr; -0.8878 | 0.5622 &rarr; 0.9754 |
+
+**Reading this against the pre-registration above:** ES/NQ Kalman's point estimate did
+not go to zero, but its p-value (0.249) no longer clears even the 10% threshold --
+per the pre-registration's own definition ("no edge distinguishable from zero"), this
+counts as the null-result outcome, not a weakened-but-still-significant one. Kalman's
+results on the other two pairs, already weak at baseline, got uniformly worse after
+correction. Rolling OLS remains the most unstable across pairs (still swinging from a
+strongly significant +1.36 to a strongly negative -0.98 to -0.19-ish depending on
+pair) -- if anything, more evidence for noise than before.

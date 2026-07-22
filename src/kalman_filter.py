@@ -65,21 +65,29 @@ def kalman_hedge_ratio(
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
+    import sys, os
+    sys.path.insert(0, os.path.dirname(__file__))
+    from cointegration import fit_ols
 
     es = pd.read_csv("data/raw/es_daily.csv", index_col="date", parse_dates=True)
     nq = pd.read_csv("data/raw/nq_daily.csv", index_col="date", parse_dates=True)
     es_log = np.log(es["close"])
     nq_log = np.log(nq["close"])
 
-    ALPHA = -0.7949431887427696
-    Q     = 1e-5                       # allow beta to drift slowly
-    R     = (0.005780) ** 2             # OLS residual std squared (from ou_model)
+    fit   = fit_ols(nq_log, es_log)
+    ALPHA = fit["alpha"]
+    Q     = 1e-5                    # allow beta to drift slowly
+    R     = fit["spread"].var()     # variance of the cointegrating regression's OLS
+                                     # residuals (the spread itself) -- see CORRECTIONS.md
+                                     # Fix D. Previously used the OU/AR(1) innovation
+                                     # variance instead, which is a different, ~62x
+                                     # smaller quantity.
 
     beta_kalman = kalman_hedge_ratio(nq_log, es_log, ALPHA, Q, R)
 
     fig, ax = plt.subplots(figsize=(12, 5))
     ax.plot(beta_kalman.index, beta_kalman, color="steelblue", linewidth=1)
-    ax.axhline(1.2383755893144004, color="crimson", linestyle="--", linewidth=1, label="Static OLS beta")
+    ax.axhline(fit["beta"], color="crimson", linestyle="--", linewidth=1, label="Static OLS beta")
     ax.set_title("Kalman Filter — Time-Varying Hedge Ratio (beta_t)")
     ax.set_xlabel("Date")
     ax.set_ylabel("Beta")

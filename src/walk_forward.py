@@ -100,7 +100,11 @@ def run_fold(nq_log: pd.Series, es_log: pd.Series,
     beta, alpha = fit["beta"], fit["alpha"]
     ou_params = estimate_ou(fit["spread"])
     window    = half_life(ou_params["theta"])
-    r_kalman  = ou_params["sigma"] ** 2
+    # R = variance of the cointegrating regression's own residuals (the spread),
+    # not the OU/AR(1) innovation variance (ou_params["sigma"]**2) -- those are
+    # different quantities, and using the latter understated R by ~62x. See
+    # CORRECTIONS.md Fix D.
+    r_kalman  = fit["spread"].var()
 
     # --- static OLS leg: fold-fixed beta/alpha, rolling stats warmed up over full span ---
     spread_ols = build_spread(full_nq, full_es, beta, alpha)

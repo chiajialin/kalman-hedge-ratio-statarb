@@ -114,7 +114,9 @@ if __name__ == "__main__":
 
     # --- Kalman filter pipeline ---
     Q = 1e-5  # allow beta to drift slowly
-    R = (0.005780) ** 2
+    # R = variance of the cointegrating regression's own residuals (the spread),
+    # not the OU/AR(1) innovation variance -- see CORRECTIONS.md Fix D.
+    R = spread.var()
     beta_kalman   = kalman_hedge_ratio(nq_log, es_log, ALPHA, Q, R)
     spread_kalman = build_spread(nq_log, es_log, beta_kalman, ALPHA)
     z_kal         = zscore(spread_kalman, window)
