@@ -73,7 +73,10 @@ def compute_returns(position: pd.Series, nq_log: pd.Series, es_log: pd.Series,
 
 
 def compute_metrics(returns: pd.Series, position: pd.Series) -> dict:
-    annual_sharpe     = returns.mean() / returns.std() * np.sqrt(252)
+    # ddof=0 to match significance.sharpe() (numpy's default). Previously pandas'
+    # ddof=1 here vs numpy's ddof=0 there made the same return series print as
+    # 0.2819 in the Section 6 table and 0.2821 in Section 8.
+    annual_sharpe     = returns.mean() / returns.std(ddof=0) * np.sqrt(252)
     cumulative_equity = (1 + returns).cumprod()
     max_drawdown      = (cumulative_equity / cumulative_equity.cummax() - 1).min()
     hit_rate          = (returns[returns != 0] > 0).mean()
