@@ -1,165 +1,137 @@
-# Project: Kalman-Filtered Dynamic Statistical Arbitrage — Testing SMT Divergence on ES/NQ
+# Kalman-Filtered Dynamic Hedge Ratio Pairs Trading
 
-## Status: Phase 1 complete. Phase 2 (intraday) explicitly descoped — see note below.
+Testing whether "SMT divergence" — a retail trading claim that correlated index
+futures diverging predicts a reversal — is a real, tradeable statistical phenomenon
+once formalised rigorously, rather than an eyeballed chart pattern.
 
-**Current state:** Phase 1 (Sections 1-6 below) is finished — cointegration, OU
-half-life, Kalman-filtered walk-forward backtest, block-bootstrap significance,
-parameter sensitivity, and a multi-pair generalisation test (ES/YM, NQ/YM alongside
-ES/NQ). Full results and the honest final conclusion live in
-`notebooks/pairs_trading_analysis.ipynb`, which is fully self-contained.
+## Result
 
-**Phase 2 (Section 5/9 below, the intraday push) was deliberately not attempted**,
-not just deprioritised: reliable multi-year intraday history for these instruments
-isn't available from the same data source used throughout (`fetch_data.py`, Yahoo's
-daily chart API — intraday endpoints there are windowed to weeks/months, not years),
-and a fair test needs its own half-life re-derivation and realistic bid-ask/slippage
-cost modelling rather than reusing the daily pipeline's constants. That makes it a
-genuinely separate project phase, not a quick extension, and it was cut given the
-project's timeline rather than left as an ambiguous stretch goal. Sections 5, 9, and
-10 below are kept as-written for the original plan and honest history of intent, not
-as a description of what was actually built.
+**No.** Across three hedge-ratio estimators (static OLS, rolling OLS, Kalman filter)
+and three cointegrated index-future pairs (ES/NQ, ES/YM, NQ/YM), tested walk-forward
+with transaction costs, no result reaches conventional statistical significance. The
+closest is a Kalman-filtered spread on ES/NQ (Sharpe 0.28, bootstrap p≈0.25) — a
+positive point estimate, not a significant one.
 
----
+This is a corrected result. An external code review found four real bugs in the
+pipeline after an earlier version of this analysis had reported a modest,
+borderline-significant edge (p≈0.08). Fixing them changed the headline finding.
+`CORRECTIONS.md` records the pre-fix numbers verbatim, a pre-registered statement
+(written before any fix was applied) of what would be reported if the edge
+disappeared, and a fix-by-fix attribution of how each bug moved the result.
 
-## 1. Origin & Motivation (the story)
+## Method
 
-This project began from a real encounter with retail day-trading content, specifically a technique called **"SMT divergence" (Smart Money Technique divergence)**. The retail claim: when two correlated assets — classically ES (S&P 500 E-mini) and NQ (Nasdaq-100 E-mini) futures, or FX pairs like EUR/USD and GBP/USD — diverge, with one making a higher high while the other fails to (makes a lower high), this divergence signals the move is weak and likely to reverse. The retail narrative attributes this to "smart money" revealing its hand through the lagging asset.
+1. **Cointegration** (`cointegration.py`, `stationary.py`) — confirm ES and NQ are
+   I(1) (Augmented Dickey-Fuller), then test whether `log(NQ) = alpha + beta*log(ES)
+   + spread` has a stationary residual, using Engle-Granger/MacKinnon critical
+   values (not plain ADF critical values — residuals from an estimated regression
+   need the more conservative test).
+2. **Mean-reversion speed** (`ou_model.py`) — fit an Ornstein-Uhlenbeck process to the
+   spread to get a half-life, which sets the rolling z-score window rather than
+   picking one arbitrarily.
+3. **Hedge ratio estimation** — three methods, compared head-to-head:
+   - Static OLS: one beta, fit once, held fixed.
+   - Rolling OLS (`walk_forward.py`): beta re-estimated from scratch each day on a
+     trailing 60-day window.
+   - Kalman filter (`kalman_filter.py`): beta as a hidden state in a linear
+     state-space model, updated via the standard predict/update recursion.
+4. **Walk-forward validation** (`walk_forward.py`) — parameters estimated on a
+   trailing fit window (700 days), traded only on the following out-of-sample test
+   window (350 days), rolled forward. A single fit-and-test on the full sample would
+   be look-ahead bias.
+5. **Significance testing** (`significance.py`) — block bootstrap (not a naive
+   t-test, since positions are held for multiple days and returns are
+   autocorrelated) to get a confidence interval and a p-value against the null of no
+   edge.
+6. **Parameter sensitivity** (`sensitivity.py`) — sweep the two hand-picked
+   hyperparameters (Kalman process noise, entry threshold) across a range of values,
+   reporting how the result moves, rather than optimising over them (which would
+   silently turn the out-of-sample test data into training data).
+7. **Multi-pair extension** (`multi_pair_screen.py`) — repeat the cointegration
+   screen across ES, NQ, YM, and RTY; carry forward only pairs that pass, to test
+   whether any result generalises beyond ES/NQ.
 
-The motivating question is a researcher's instinct: **is this a real, tradeable phenomenon when formalised mathematically, or is it just post-hoc chart-reading?**
+## Data
 
-Stripped of the narrative, SMT divergence is a claim about **two correlated assets temporarily decoupling, followed by reversion** — which is, almost exactly, the spread-divergence-and-reversion idea that statistical arbitrage formalises. The retail trader eyeballs "one made a higher high, one didn't"; the quant writes down the spread between the two assets and asks: when it stretches abnormally wide, does it revert? Same underlying phenomenon — one expressed as chart-pattern intuition, the other as a testable statistical statement.
+Daily OHLCV for ES, NQ, YM, and RTY continuous front-month futures, 2020-01-02 to
+2026-06-25 (1,631 trading days), pulled from Yahoo's chart API (`fetch_data.py`) and
+committed under `data/raw/` for reproducibility — Yahoo's API revises history, so
+re-fetching would not reproduce the exact numbers below.
 
-This origin matters because it answers "why did you do this project?" with a genuine, compelling answer rather than a manufactured one: *"I encountered a specific retail claim and wanted to test it rigorously."*
+## Results
 
-### Honest caveats baked into the framing (these are strengths, not weaknesses)
-- SMT is usually framed on price **levels** (highs and lows); stat-arb works on the **spread**. Translating "higher high vs lower high" into a precise spread definition is a real modelling choice that must be made and defended.
-- Timeframe matters enormously. SMT is an intraday, often sub-hourly, discretionary signal. Whether it survives as a systematic rule — with costs, at whatever frequency data permits — is the open question.
-- The retail version has no statistical test of significance. This project's entire upgrade is replacing "I can see it on the chart" with "here's whether it's distinguishable from noise."
-- Much SMT-divergence content is genuinely junk — post-hoc pattern-matching on cherry-picked charts, no out-of-sample testing, survivorship in the examples shown. The project goes in prepared for the real result to be "weaker than advertised, or not surviving costs." That is not a failed project — that IS the project. The value is in the rigorous test, whichever way it falls.
+**Cointegration screen** (Engle-Granger, direction fixed in advance: broader index
+always the regressor):
 
----
+| Pair | p-value | Cointegrated (p&lt;0.10)? |
+|---|---|---|
+| ES/NQ | 0.088 | Yes (weakest of the three) |
+| ES/YM | 0.001 | Yes |
+| NQ/YM | 0.004 | Yes |
+| ES/RTY | 0.456 | No |
+| RTY/NQ | 0.329 | No |
+| RTY/YM | 0.602 | No |
 
-## 2. The Research Question
+RTY (Russell 2000) is dropped — a sustained small-cap underperformance regime over
+this sample, not a mean-reverting relationship. ES/NQ/YM carried forward.
 
-> "Retail traders use SMT divergence as a discretionary signal. Is the phenomenon it points at — correlated-index divergence and reversion — real and tradeable when you formalise it mathematically, and does a proper state-space treatment of the divergence beat the eyeball version? And critically: at what frequency and cost level does the edge survive or break down?"
+**Walk-forward, out-of-sample, after transaction costs:**
 
----
+| Pair | Method | Sharpe | p-value (H0: no edge) |
+|---|---|---|---|
+| ES/NQ | Static OLS | -0.19 | 0.738 |
+| ES/NQ | Rolling OLS | 0.63 | 0.114 |
+| ES/NQ | Kalman | 0.28 | 0.249 |
+| ES/YM | Static OLS | -0.37 | 0.915 |
+| ES/YM | Rolling OLS | 1.36 | 0.002 |
+| ES/YM | Kalman | -0.46 | 0.896 |
+| NQ/YM | Static OLS | 0.01 | 0.582 |
+| NQ/YM | Rolling OLS | -0.98 | 0.949 |
+| NQ/YM | Kalman | -0.89 | 0.975 |
 
-## 3. Why the Kalman Filter (precise framing)
+Rolling OLS's apparent significance on ES/YM (p=0.002) does not replicate on NQ/YM
+(strongly negative instead) — the signature of a high-variance estimator getting
+lucky or unlucky against a specific realised price path, not a real effect. Kalman
+shows no significant edge on any pair.
 
-The Kalman filter is **not itself an arbitrage technique**. It is a general **state-space estimation tool** that tracks a hidden quantity that changes over time from noisy observations (it was originally built for problems like tracking a rocket's position from noisy radar). It has no inherent connection to trading.
+## Honest conclusion
 
-The connection here is specific: in pairs trading, the **hedge ratio** between two cointegrated assets is the hidden quantity that drifts over time, and the prices are the noisy observations. The Kalman filter tracks that drifting hedge ratio.
+The retail claim is not supported. A Kalman-filtered dynamic hedge ratio does not
+produce a statistically significant mean-reversion edge on any of the three
+cointegrated pairs tested, at daily frequency, once look-ahead bias, proper
+significance testing, and pipeline bugs are all accounted for. The full reasoning,
+including the multi-pair generalisation test and the parameter sensitivity analysis,
+is in `notebooks/pairs_trading_analysis.ipynb` (fully self-contained, executes
+end-to-end).
 
-Correct framing: *not* "Kalman is an arbitrage method," but "the hedge ratio in stat-arb is exactly the kind of slowly-evolving hidden state a Kalman filter is built to estimate."
+## Limitations
 
-The accurate one-liner: **"I use a Kalman filter to track a time-varying hedge ratio between cointegrated assets, and trade mean-reversion on the resulting spread."**
+- Only 3 walk-forward folds (~830 out-of-sample days) — a real constraint from the
+  spread's ~68-day half-life relative to the available sample, not a design choice.
+- Daily frequency only. SMT divergence is, in its retail form, an intraday signal;
+  testing it at that frequency was considered and explicitly descoped, not left
+  ambiguous — it needs a different data source (this project's daily OHLCV source has
+  no multi-year intraday history), its own half-life re-derivation, and realistic
+  bid-ask/slippage cost modelling, rather than reusing the daily pipeline's constants.
+- No purged/embargoed cross-validation or deflated Sharpe ratio correction for
+  multiple testing (three estimators, three pairs) — named as the more rigorous
+  approach in `LEARNING_NOTES.md`, not implemented, given the small number of
+  genuinely independent pairs available.
 
-### Two precision points (interview-critical)
-- **"Statistical arbitrage" is not true arbitrage.** True arbitrage is risk-free — simultaneous offsetting trades locking in guaranteed profit. Stat-arb is a *statistical bet on mean reversion*: the spread might not revert (the relationship can break permanently — cointegration fails out of sample, a company gets acquired, etc.). Calling it "arbitrage" is industry convention, not literal. Do not oversell it as riskless.
-- **The Kalman filter is the *estimation* layer, not the strategy.** The strategy is mean-reversion trading on the spread. The filter's job is to give a better, adaptive estimate of the hedge ratio (and hence a cleaner spread) than static OLS. The edge, if any, comes from the adaptivity being worth its cost — which must be *proven* against simpler baselines, not assumed.
+## Reproducing this
 
-### Why Kalman is necessary, not decorative
-The ES/NQ relationship genuinely drifts (e.g. with sector rotation between tech-heavy NQ and broader ES), so a static hedge ratio would mis-measure divergence over time. A time-varying estimate is required to define "abnormal divergence" correctly. This is also where a biomedical signal-processing background does work a CS-background applicant cannot easily replicate — state-space estimation is signal-processing-native territory (directly tied to the Parkinson's signal-processing work and the Statistical Signal Processing module).
+```
+pip install -r requirements.txt
+python src/stationary.py          # I(1) checks
+python src/cointegration.py       # Engle-Granger test, ES/NQ
+python src/ou_model.py            # half-life
+python src/backtest.py            # naive full-sample backtest, both hedge-ratio methods
+python src/walk_forward.py        # walk-forward validation
+python src/significance.py        # block-bootstrap significance
+python src/sensitivity.py         # parameter sensitivity sweep (several minutes)
+python src/multi_pair_screen.py   # cointegration screen across all 4 instruments
+python src/multi_pair_backtest.py # walk-forward on ES/YM, NQ/YM
+```
 
----
-
-## 4. The Pair & Data
-
-**Pair:** ES (S&P 500 E-mini) and NQ (Nasdaq-100 E-mini) continuous front-month futures — the classic SMT pair. Both indices are tech-heavy and highly correlated, which is *why* SMT traders pair them, and also why divergences are usually small and short-lived (to be quantified).
-
-**Data availability (as established):**
-- **Free, research-grade minute data exists** — e.g. a Kaggle dataset of ~1.05 million rows of NQ 1-minute OHLCV bars covering Dec 2022–Dec 2025, including regular and extended hours, explicitly for research/educational use, spanning multiple regimes (trends, vol spikes, consolidation). A matched ES dataset should be sourced from the same/similar provider.
-- **Daily data** is trivially accessible free (Investing.com, EODData, yfinance-style sources).
-- Most paid providers (FirstRate, Portara, Barchart Premier) gate intraday behind subscriptions; the free path is **Kaggle-type minute data + free daily as fallback.**
-
-**Data caveat:** OHLCV bars hide execution detail — there is no bid-ask or order-book information. This limits how literally the intraday microstructure can be modelled, which is itself part of the honest story.
-
----
-
-## 5. Two-Phase Structure
-
-*(As originally planned — see the Status note at the top: Phase 2 was ultimately
-descoped, not executed. Kept below for honest history of intent and reasoning.)*
-
-The chosen approach is **"phenomenon first cleanly, then push to intraday and show where it breaks down."** This is structurally the strongest version because the *breakdown is the finding*: a strategy that works at daily but decays toward intraday isolates the exact point where costs, microstructure, and execution friction consume the edge. That demonstrates an edge is not binary but frequency- and cost-dependent — exactly how a real desk evaluates tradeability. The two-phase structure is the mechanism that generates the project's single most impressive insight.
-
-**Discipline note (named risk):** "Do both" is the version most exposed to scope creep. The failure mode is that Phase 1 never reaches a defensible standard because Phase 2 is shinier. **Phase 1 must be genuinely interview-ready before Phase 2 begins** — a complete, defensible result on its own, such that if time runs out, there is still a finished project. Phase 2 is the upgrade, not the goal.
-
-### Phase 1: The phenomenon, tested cleanly (daily, then hourly)
-
-**Step 1 — Data and pair.** ES and NQ continuous front-month. Start daily (trivially accessible), then hourly.
-
-**Step 2 — Establish the relationship (stats showcase).** Test for cointegration (Engle-Granger). Be explicit about correlation vs cointegration: ES and NQ are strongly *correlated* in returns, but a stable long-run *level* relationship is needed to define a tradeable spread. Report honestly whether they are genuinely cointegrated over the sample or only locally — the relationship between two equity indices can shift with sector rotation (tech-heavy NQ vs broader ES).
-
-**Step 3 — The Kalman core (the moat).** Estimate a *time-varying* hedge ratio between ES and NQ via a Kalman filter, rather than a static OLS regression. The hedge ratio is the hidden state; prices are the noisy observations; the filter tracks how the relationship drifts.
-
-**Step 4 — Define divergence precisely (the key modelling decision).** This replaces the eyeball. SMT's "higher high in one, not the other" becomes: *the Kalman-filtered spread (actual minus predicted relationship) stretches beyond X standard deviations.* This translates a discretionary chart pattern into a falsifiable statistical statement. Defending this translation — why this definition faithfully captures what SMT traders see — is a high-value interview moment.
-
-**Step 5 — Test reversion and significance (stats).** When divergence occurs, does the spread revert? Measure the reversion and — critically — test whether it is distinguishable from noise (the retail version never does this). Report effect size, not just "it reverts sometimes."
-
-**Step 6 — Trade and evaluate.** Trade the filtered residual with entry/exit thresholds, transaction costs, walk-forward validation. Benchmark Kalman against static OLS and rolling-window regression — proving the state-space sophistication earns its keep (and honestly reporting if it sometimes does not).
-
-### Phase 2: Push to intraday, find where it breaks
-
-**Step 7 — Go to 5-minute, then 1-minute** using the Kaggle-type minute data. Re-run the whole pipeline at each frequency.
-
-**Step 8 — The microstructure reckoning.** As frequency increases, layer in increasingly realistic frictions: bid-ask spread assumptions, slippage, and the fact that OHLCV bars hide execution detail. Show how the apparent edge changes as costs bite.
-
-**Step 9 — The headline finding.** Plot edge (risk-adjusted return after costs) against frequency. Likely shape: a phenomenon that looks real and significant at daily/hourly, then decays — possibly vanishing — at minute frequency once realistic costs apply. *That curve is the project's signature result.* It answers "is SMT real?" with the honest, sophisticated answer: the divergence-reversion phenomenon is statistically real, but whether it is *tradeable* depends entirely on frequency and costs — and at the timeframe retail traders actually use it, the edge is largely consumed by frictions.
-
----
-
-## 6. How the Components Map to the Three Required Skill Areas
-
-- **Machine Learning / comparison discipline:** benchmarking Kalman dynamic hedge ratio against static OLS and rolling-window regression on identical data, costs, and evaluation.
-- **Data Analytics:** pair selection, spread construction, frequency sweeps, P&L curves, edge-vs-frequency analysis.
-- **Statistics:** cointegration testing (Engle-Granger), correlation vs cointegration distinction, time-varying state-space estimation (Kalman), significance testing of reversion, walk-forward validation against non-stationarity.
-
----
-
-## 7. Defensibility — Three Levels Deep
-
-- *Why Kalman?* Because the relationship drifts; static mis-measures divergence. → *Why does drift matter?* Sector rotation between tech-heavy NQ and broader ES. → *Why state-space over rolling window?* Benchmarked exactly that and report the answer.
-- *Why these stats?* Cointegration defines the tradeable spread; significance testing separates signal from noise. → *Why walk-forward / out-of-sample rigour?* Non-stationarity; a single split would overstate the edge.
-- *Why the frequency sweep?* Because tradeability is not binary — it is where the real insight lives (the edge-vs-frequency breakdown curve).
-
----
-
-## 8. Relationship to the Second Project (Regime-Gated VRP Harvesting)
-
-This Kalman/SMT project is the **anchor** — it carries the personal origin story, the signal-processing moat, and the cleanest "this is me" narrative. The **Regime-Gated Variance Risk Premium Harvesting** project is the **second piece**, deliberately designed to **share infrastructure**: the same backtesting engine, walk-forward harness, and transaction-cost-modelling discipline built here are reused there. Build this anchor to interview-ready state first; add the VRP project if time before the October application cycle allows.
-
-**Unifying career narrative across both projects (and the Parkinson's work):** *"I extract tradeable signal from noisy data — whether the right tool is state-space (Kalman for stat-arb) or econometric (GARCH/HMM for VRP)."* This single thread ties the biomedical signal-processing background, the SMT/Kalman project, and the VRP project into one coherent quant identity: a person who pulls signal from noise.
-
----
-
-## 9. Tools & Stack
-
-*(As originally planned; the Kaggle minute-data line below was never pulled in — Phase
-2 was descoped, see Status note at the top. What was actually used: pandas, numpy,
-statsmodels, a hand-rolled Kalman filter, matplotlib, and Yahoo's daily chart API via
-`fetch_data.py`.)*
-
-- **Python** (primary): pandas, numpy; `statsmodels` (cointegration / Engle-Granger); a Kalman implementation (`pykalman` or hand-rolled); scikit-learn for benchmark regressions; matplotlib for the edge-vs-frequency curve.
-- **Data:** Kaggle-type ES/NQ 1-minute OHLCV (Dec 2022–Dec 2025); free daily data as fallback.
-- **Evaluation:** walk-forward validation; risk-adjusted metrics (Sharpe, max drawdown); transaction-cost and slippage modelling.
-
----
-
-## 10. Likely / Acceptable Outcomes (set expectations honestly)
-
-*(Original planning framing, written before Phase 2 was descoped — see the actual
-outcome below.)*
-
-The credible, impressive outcome is NOT "I found a money-printing strategy." It is most likely: *the divergence-reversion phenomenon is statistically real at lower frequencies, but the tradeable edge decays and is largely consumed by transaction costs and microstructure frictions as frequency increases toward the intraday timeframe retail SMT traders actually use.* Reporting this honestly — with the edge-vs-frequency curve as evidence — is more impressive than a fabricated positive result, and demonstrates exactly the judgment quant desks value.
-
-**What was actually found (Phase 1 only, daily frequency):** a modest,
-borderline-significant Kalman-filtered edge on ES/NQ (walk-forward Sharpe 0.31,
-bootstrap p≈0.08) that does **not** clearly generalise to ES/YM or NQ/YM under the
-same fixed methodology — Kalman's Sharpe collapses to ~0 on both. No edge-vs-frequency
-curve was produced, since Phase 2 wasn't attempted. The honest conclusion is a
-partially-confirmed, single-pair-strongest result rather than the frequency-decay
-narrative originally hypothesised — see the notebook's Section 13 for the full
-reasoning. (Note: these specific numbers are mid-correction as of this writing — see
-the notebook's Corrections section for the current, verified figures.)
+Or open `notebooks/pairs_trading_analysis.ipynb` directly — it runs the same `src/`
+code and contains the full write-up.
