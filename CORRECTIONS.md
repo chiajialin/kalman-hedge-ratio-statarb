@@ -197,3 +197,15 @@ now match the notebook figures above exactly. The numbers themselves were alread
 correct (computed directly in the notebook, not from the broken snapshot) -- only the
 committed CSV artifact was wrong, and only in a direction that would have looked more
 favourable to the project than the truth, not less.
+
+## Post-review polish (2026-07-22, no result changes)
+
+A second review pass fixed presentation and portability issues, none touching the
+pipeline's results: the notebook's hardcoded machine-specific root path (broke
+end-to-end execution on any other machine), a stale ~830 OOS day count in notebook
+Section 10 (931, same fix as README commit 33ceb86), a ddof mismatch that printed
+the same Sharpe as 0.2819 (Section 6) and 0.2821 (Section 8), and a README/Section-13
+headline that said "no result reaches conventional significance" while the grid
+contained one nominally significant cell (rolling OLS ES/YM, p=0.002) — now stated
+and then dismissed on replication grounds, rather than omitted. Cost-model
+convention and unadjusted-roll caveats added to Limitations.
