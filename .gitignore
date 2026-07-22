@@ -10,6 +10,7 @@ data/processed/*
 !data/raw/rty_daily.csv
 !data/processed/sensitivity_sweep.png
 !data/processed/sensitivity_heatmap.png
+!data/processed/snapshot_*.csv
 __pycache__/
 *.pyc
 .venv/
