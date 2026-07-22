@@ -156,3 +156,31 @@ fragility (ENTRY_THRESHOLD)." The corrected story is closer to "no combination o
 these two parameters, across the ranges tested, produces a statistically significant
 result" -- consistent with, not contradicted by, Fix D's finding at the single
 default configuration.
+
+## Disclosed Q/R reparameterisation from Fix D (added 2026-07-22)
+
+Fix D corrected `R` (Kalman observation noise) from ~3.34e-5 (the AR(1)/OU innovation
+variance, used in error) to ~2.08e-3 (the cointegrating regression's actual residual
+variance) -- a ~62x increase. `Q_KALMAN` (`walk_forward.py`, `1e-5`) was never adjusted
+to match, so holding it fixed means the corrected filter runs at Q/R ~= 0.0048, roughly
+62x less adaptive than the pre-fix filter's Q/R ~= 0.30. Left undisclosed, this looked
+concealed: the sweep range in `sensitivity.py` had the default sitting exactly on its
+left boundary, and the Q/R ratio that would reproduce the pre-fix filter's adaptivity
+fell inside a region of the sweep with better-looking Sharpe/p-values.
+
+Two things were done about this, both pre-specified before looking at any result:
+1. Widened `Q_KALMAN_RANGE` / `HEATMAP_Q_RANGE` in `sensitivity.py` from
+   `logspace(-5, -1.5, ...)` to `logspace(-6, -1.5, ...)` so the default no longer sits
+   on a boundary.
+2. Added `q_kalman_equivalent()` (`walk_forward.py`) -- computed directly from the
+   pre/post-Fix-D R ratio (`PRE_FIX_Q_OVER_R = 1e-5 / 3.34e-5`, applied to each pair's
+   own corrected R), not selected by inspecting the sweep. Tested identically across
+   all three pairs (notebook Section 9b), not just ES/NQ.
+
+**Actual finding (notebook Section 9b):** `Q_KALMAN_EQUIVALENT` = 6.22e-04 (ES/NQ's R).
+At this Q, none of the three pairs improve on their current-default numbers -- ES/NQ is
+slightly worse (Sharpe 0.18, p=0.27 vs. 0.28/0.25 at default), and ES/YM, NQ/YM are both
+strongly negative and far from significant (Sharpe -0.73/p=0.98, Sharpe -0.52/p=0.88).
+The concern motivating this check -- an undisclosed, favourable-looking operating point
+-- does not materialise numerically. Section 13's null conclusion is unchanged, and if
+anything reinforced by this check, not weakened by it.

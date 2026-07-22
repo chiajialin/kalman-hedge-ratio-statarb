@@ -42,6 +42,23 @@ ROLLING_WINDOW = 60    # trailing window for the rolling-OLS baseline, ~3 months
                         # standard choice in the pairs-trading literature, and short
                         # enough (relative to FIT_WINDOW=700) to actually adapt within a fold
 
+# --- Disclosed robustness check, not a retuned default ---
+# Before Fix D, R was ~3.34e-5 (AR(1) innovation variance, used in error). Q was
+# never touched, so the pre-fix filter ran at Q/R ~= 0.30. After Fix D, R is the
+# cointegrating regression's residual variance (~2.08e-3, ~62x larger), so
+# holding Q at 1e-5 corresponds to a filter ~62x LESS adaptive than the one that
+# produced the original 0.31 Sharpe. This function reproduces the pre-fix
+# filter's Q/R ratio under the corrected R, as a pre-specified robustness check
+# -- see CORRECTIONS.md. It is NOT a new default, and NOT the output of
+# searching the sweep for a favourable point.
+PRE_FIX_R = 3.34e-5
+PRE_FIX_Q_OVER_R = 1e-5 / PRE_FIX_R
+
+def q_kalman_equivalent(spread: pd.Series) -> float:
+    """Q that reproduces the pre-Fix-D filter's Q/R ratio under the corrected R."""
+    new_R = spread.var()
+    return PRE_FIX_Q_OVER_R * new_R
+
 
 def rolling_ols_beta(nq_log: pd.Series, es_log: pd.Series, window: int) -> pd.Series:
     """Rolling-window OLS slope: beta_t = Cov(NQ, ES; trailing window) / Var(ES; trailing window).
