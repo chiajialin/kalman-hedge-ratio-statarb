@@ -11,29 +11,22 @@ moved the result. Written *before* any of the fixes were applied, specifically s
 
 **What I will report if the Kalman edge on ES/NQ goes to zero once the bugs are fixed:**
 
-<div style="color:gray">
-
 I report it as the project's headline finding: across three estimators
 (static OLS, rolling OLS, Kalman) and three cointegrated pairs, tested
 walk-forward with transaction costs, no edge distinguishable from zero.
 Section 13 becomes a null result, not a weakened positive one.
 
 Ruled out in advance, if the number comes back at or near zero:
-
-<ul>
-<li>retuning Q_KALMAN, ROLLING_WINDOW, or ENTRY_THRESHOLD after seeing the corrected numbers</li>
-<li>extending or shifting the sample window</li>
-<li>switching pair, frequency, or entry rule and reporting that result instead</li>
-<li>leading with the pre-fix 0.31 and relegating the correction to a footnote</li>
-</ul>
-
+- retuning Q_KALMAN, ROLLING_WINDOW, or ENTRY_THRESHOLD after seeing the
+  corrected numbers
+- extending or shifting the sample window
+- switching pair, frequency, or entry rule and reporting that result instead
+- leading with the pre-fix 0.31 and relegating the correction to a footnote
 The one thing that does justify re-running: discovering a further genuine
 error in the pipeline. "I found a bug" is a legitimate reason to redo a
 calculation; "I didn't like the number" is not. If I do find another error,
 it gets its own row in the attribution table below, with the same before/after
 treatment as fixes A-D.
-
-</div>
 
 ## Bugs being corrected (see conversation / review for full detail)
 
@@ -83,7 +76,7 @@ To be populated from `data/processed/snapshot_*.csv` after each commit in Step 3
 | Stage | ES/NQ Kalman Sharpe | ES/NQ Kalman p-value | Notes |
 |-------|---------------------|----------------------|-------|
 | baseline (pre-fix) | 0.3096 | 0.0770 | matches table above |
-| + Fix A (lag) | TBD | TBD | |
+| + Fix A (lag) | 0.2764 | 0.1920 | Sharpe barely moved, p-value alone crossed above the 10% threshold |
 | + Fix B (beta look-ahead) | TBD | TBD | |
 | + Fix C (EG critical values) | TBD | TBD | screen only, no effect expected here |
 | + Fix D (R correction) | TBD | TBD | expected to move the most |

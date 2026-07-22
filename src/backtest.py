@@ -39,8 +39,6 @@ def generate_signals(z: pd.Series, entry: float, exit_threshold: float) -> pd.Se
         if pd.isna(z_val):
             continue
 
-        position.iloc[i] = current
-
         if current == 0:
             if z_val < -entry:
                 current = 1.0
@@ -52,6 +50,8 @@ def generate_signals(z: pd.Series, entry: float, exit_threshold: float) -> pd.Se
         elif current == -1.0:
             if z_val <= -exit_threshold:
                 current = 0.0
+
+        position.iloc[i] = current
 
     return position.shift(1).fillna(0.0)
 
