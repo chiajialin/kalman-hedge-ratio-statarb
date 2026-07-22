@@ -148,6 +148,11 @@ end-to-end).
   OOS days, splitting by regime leaves too little data per state to test anything,
   and post-hoc regime labels chosen after seeing results would reintroduce exactly
   the selection bias the rest of the pipeline avoids.
+- The daily test has limited statistical power: with 931 OOS days against a ~68-day
+  half-life, bootstrap confidence intervals are wide (Kalman ES/NQ: [-0.30, +1.09]),
+  so the null cannot distinguish "phenomenon absent" from "test underpowered." An
+  intraday extension to resolve this — at the timeframe the retail claim actually
+  targets — is pre-registered in `PHASE2_PROTOCOL.md` (in progress).
 
 ## Reproducing this
 
