@@ -58,7 +58,13 @@ def generate_signals(z: pd.Series, entry: float, exit_threshold: float) -> pd.Se
 
 def compute_returns(position: pd.Series, nq_log: pd.Series, es_log: pd.Series,
                     beta: float, cost_bps: float) -> pd.Series:
-    daily_spread_return   = nq_log.diff() - beta * es_log.diff()
+    # beta_t is estimated using the price observed at t, so scaling the return over
+    # [t-1, t] with beta_t would use information not available until the end of that
+    # same period. Lag it one day -- yesterday's belief hedges today's return, not
+    # today's freshly-updated one. (Static OLS passes a single float, not a Series,
+    # so there's nothing to lag in that case.)
+    beta_lag = beta.shift(1) if isinstance(beta, pd.Series) else beta
+    daily_spread_return   = nq_log.diff() - beta_lag * es_log.diff()
     daily_strategy_return = position * daily_spread_return
     trade_days            = (position.diff().abs() > 0).astype(float)
     daily_strategy_return -= (cost_bps / 10000) * trade_days

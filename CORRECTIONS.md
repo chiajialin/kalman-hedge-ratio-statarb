@@ -77,6 +77,6 @@ To be populated from `data/processed/snapshot_*.csv` after each commit in Step 3
 |-------|---------------------|----------------------|-------|
 | baseline (pre-fix) | 0.3096 | 0.0770 | matches table above |
 | + Fix A (lag) | 0.2764 | 0.1920 | Sharpe barely moved, p-value alone crossed above the 10% threshold |
-| + Fix B (beta look-ahead) | TBD | TBD | |
+| + Fix B (beta look-ahead) | 0.2818 | 0.1854 | small movement, as expected for a same-day-only look-ahead |
 | + Fix C (EG critical values) | TBD | TBD | screen only, no effect expected here |
 | + Fix D (R correction) | TBD | TBD | expected to move the most |
