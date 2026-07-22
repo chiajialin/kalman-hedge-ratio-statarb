@@ -38,6 +38,12 @@ def estimate_ou(spread: pd.Series) -> dict:
     result = sm.OLS(X_t, sm.add_constant(X_lag)).fit()
     c = result.params[0]  # intercept
     phi = result.params[1]  # slope
+    if phi >= 1:
+        raise ValueError(
+            f"AR(1) coefficient phi={phi:.4f} >= 1: no mean reversion detected in "
+            "this window, so OU parameters (and a half-life) are undefined. Treat "
+            "the fold as untradeable rather than forcing a window through -log(phi)."
+        )
     theta = -np.log(phi)
     mu = c / (1 - phi)
     sigma = np.std(result.resid)
