@@ -184,3 +184,16 @@ strongly negative and far from significant (Sharpe -0.73/p=0.98, Sharpe -0.52/p=
 The concern motivating this check -- an undisclosed, favourable-looking operating point
 -- does not materialise numerically. Section 13's null conclusion is unchanged, and if
 anything reinforced by this check, not weakened by it.
+
+**Correction to this entry (same day):** the first commit of `snapshot_q_equivalent_check.csv`
+did not actually run at `Q_KALMAN_EQUIVALENT` -- `results_snapshot.py` had no way to
+override `Q_KALMAN`, so `python src/results_snapshot.py q_equivalent_check` silently
+reran at the default and produced a byte-for-byte duplicate of `snapshot_fix_e_smaller.csv`
+under a new tag. `results_snapshot.py` now takes a `--q-equiv` flag (computes
+`Q_KALMAN_EQUIVALENT` from ES/NQ's R via `q_kalman_equivalent()`, same as the notebook,
+and applies it to all three pairs); the snapshot has been regenerated for real via
+`python src/results_snapshot.py q_equivalent_check --q-equiv` and its Kalman-leg numbers
+now match the notebook figures above exactly. The numbers themselves were already
+correct (computed directly in the notebook, not from the broken snapshot) -- only the
+committed CSV artifact was wrong, and only in a direction that would have looked more
+favourable to the project than the truth, not less.
