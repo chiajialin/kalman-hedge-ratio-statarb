@@ -1,8 +1,8 @@
 # Corrections
 
 This file exists because a review surfaced real bugs in the statistical pipeline
-after the headline numbers were already written up throughout the notebook and
-`LEARNING_NOTES.md`. Rather than quietly patching the numbers, the pre-fix values are
+after the headline numbers were already written up throughout the notebook. Rather
+than quietly patching the numbers, the pre-fix values are
 recorded here verbatim, alongside a fix-by-fix attribution of how each correction
 moved the result. Written *before* any of the fixes were applied, specifically so the
 "before" column can't be revised with hindsight once the corrected numbers exist.
