@@ -114,9 +114,9 @@ end-to-end).
   no multi-year intraday history), its own half-life re-derivation, and realistic
   bid-ask/slippage cost modelling, rather than reusing the daily pipeline's constants.
 - No purged/embargoed cross-validation or deflated Sharpe ratio correction for
-  multiple testing (three estimators, three pairs) — named as the more rigorous
-  approach in `LEARNING_NOTES.md`, not implemented, given the small number of
-  genuinely independent pairs available.
+  multiple testing (three estimators, three pairs) — named here as the more rigorous
+  approach, not implemented, given the small number of genuinely independent pairs
+  available.
 
 ## Reproducing this
 
