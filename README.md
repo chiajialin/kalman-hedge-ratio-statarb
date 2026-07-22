@@ -122,6 +122,17 @@ end-to-end).
   multiple testing (three estimators, three pairs) — named here as the more rigorous
   approach, not implemented, given the small number of genuinely independent pairs
   available.
+- Transaction costs are charged per unit of *spread* traded (COST_BPS = 1.0 bps,
+  one-way, per position change). A spread unit transacts roughly (1 + beta) ≈ 2.2
+  units of combined leg notional, so the per-leg equivalent is ≈0.45 bps —
+  defensible for ES/NQ, where half-spreads run well under a basis point, and
+  stress-tested to 10 bps in `backtest.py`'s cost sweep. A per-leg convention
+  would roughly double the base charge.
+- Yahoo's continuous front-month series are not roll-adjusted: a position held
+  through a quarterly roll books the roll gap as P&L a real position wouldn't earn.
+  The largest one-day spread moves in this sample are macro events (Mar 2020,
+  Nov 2020), not roll dates, and both legs roll on the same dates so gaps partially
+  cancel in the spread — but back-adjusted contracts would be the rigorous fix.
 
 ## Reproducing this
 
