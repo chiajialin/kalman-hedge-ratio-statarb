@@ -34,7 +34,19 @@ SEED = 0
 
 # Log-spaced over Q_KALMAN's 3 orders of magnitude -- linear spacing would waste
 # almost all points on the (uninteresting, flat) high end.
-Q_KALMAN_RANGE        = np.logspace(-6, -3, 25)
+#
+# Range recentred after CORRECTIONS.md Fix D: R increased ~62x (was the OU/AR(1)
+# innovation variance, corrected to the cointegrating regression's actual residual
+# variance). Q is only meaningful relative to R, so the old logspace(-6, -3) window
+# now covers a filter up to 62x less adaptive than what it swept before -- it no
+# longer brackets the same Q/R territory. Shifted up by roughly that factor. This
+# is a recentring to match the corrected R, not a search for a better-looking value
+# -- the range was chosen before rerunning the sweep, same discipline as always.
+# Lower bound extended to -5 (not exactly -4.5) specifically so the actual current
+# Q_KALMAN default (1e-5) is an included, swept data point rather than sitting just
+# outside the range -- otherwise this sweep couldn't confirm the real configuration
+# behaves the way the rest of the range suggests, only points near it.
+Q_KALMAN_RANGE        = np.logspace(-5, -1.5, 25)
 ENTRY_THRESHOLD_RANGE = np.arange(1.0, 3.01, 0.1)
 
 # Coarser grid for the joint sweep -- one-at-a-time sweeps above hold the other
@@ -43,7 +55,7 @@ ENTRY_THRESHOLD_RANGE = np.arange(1.0, 3.01, 0.1)
 # 25 or 21) and fewer bootstrap draws, purely to keep runtime reasonable -- the
 # goal here is spotting an interaction pattern, not precise per-cell values.
 HEATMAP_N_BOOT      = 1000
-HEATMAP_Q_RANGE     = np.logspace(-6, -3, 12)
+HEATMAP_Q_RANGE     = np.logspace(-5, -1.5, 12)
 HEATMAP_ENTRY_RANGE = np.arange(1.0, 3.01, 0.2)
 
 
