@@ -1,19 +1,22 @@
 """
 Engle-Granger cointegration screen across all six ES/NQ/YM/RTY index-future pairs.
 
-Loops fit_ols() (cointegration.py) + run_adf() (stationary.py) -- the same two-step
+Loops fit_ols() + eg_cointegration() (both cointegration.py) -- the same two-step
 Engle-Granger procedure already validated on ES/NQ -- over every pair, using a
 regression direction fixed in advance rather than picked after seeing results:
 breadth order ES > RTY > NQ > YM, broader index always the regressor (X), narrower
-one the dependent variable (Y). Engle-Granger's ADF-on-residual test is not symmetric
+one the dependent variable (Y). Engle-Granger's cointegration test is not symmetric
 under swapping X and Y, so a direction chosen post-hoc could silently make a pair look
 cointegrated (or not) by chance rather than by picking the direction blind.
+
+Uses eg_cointegration() (proper MacKinnon critical values for regression residuals),
+not stationary.run_adf() (plain ADF critical values, correct only for testing a raw
+series directly -- see CORRECTIONS.md Fix C).
 """
 
 import pandas as pd
 import numpy as np
-from stationary import run_adf
-from cointegration import fit_ols
+from cointegration import fit_ols, eg_cointegration
 
 
 if __name__ == "__main__":
@@ -36,10 +39,22 @@ if __name__ == "__main__":
         (ym_log, rty_log, "RTY / YM"),
         (ym_log, nq_log,  "NQ / YM"),
     ]
+
+    screen_rows = []
     for y_log, x_log, label in pairs:
         fit = fit_ols(y_log, x_log)
+        eg = eg_cointegration(y_log, x_log)
         print(f"\n--- {label} ---")
         print(f"Beta (slope coefficient): {fit['beta']}")
         print(f"Alpha (intercept): {fit['alpha']}")
-        run_adf(fit["spread"], f"Spread ({label})")
+        print(f"EG statistic: {eg['stat']:.4f}")
+        print(f"p-value: {eg['p_value']:.4f}")
+        print("Critical values (1%, 5%, 10%):", eg["crit_values"])
+        screen_rows.append({
+            "Pair": label, "Beta": fit["beta"], "Alpha": fit["alpha"],
+            "EG p-value": eg["p_value"], "Cointegrated (p<0.10)": eg["p_value"] < 0.10,
+        })
 
+    screen_table = pd.DataFrame(screen_rows).set_index("Pair")
+    print("\n" + "=" * 60)
+    print(screen_table)

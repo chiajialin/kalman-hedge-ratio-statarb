@@ -11,7 +11,7 @@ quantity.
 import statsmodels.api as sm
 import pandas as pd
 import numpy as np
-from stationary import run_adf
+from statsmodels.tsa.stattools import coint
 
 
 def fit_ols(nq_log: pd.Series, es_log: pd.Series) -> dict:
@@ -32,6 +32,27 @@ def fit_ols(nq_log: pd.Series, es_log: pd.Series) -> dict:
     return {"beta": beta, "alpha": alpha, "spread": spread}
 
 
+def eg_cointegration(y_log: pd.Series, x_log: pd.Series) -> dict:
+    """Engle-Granger cointegration test using proper MacKinnon critical values.
+
+    Residuals from an estimated cointegrating regression are NOT a plain
+    stationary series -- the regression already minimised residual variance,
+    which makes plain ADF critical values (as in stationary.run_adf) too
+    lenient and overstate significance. statsmodels.tsa.stattools.coint()
+    runs the same regression internally and applies the correct, more
+    conservative critical values for exactly this case.
+
+    Args:
+        y_log: Log prices of the dependent series.
+        x_log: Log prices of the regressor series.
+
+    Returns:
+        Dict with keys: stat, p_value, crit_values.
+    """
+    stat, p_value, crit_values = coint(y_log, x_log)
+    return {"stat": stat, "p_value": p_value, "crit_values": crit_values}
+
+
 if __name__ == "__main__":
     nq = pd.read_csv("data/raw/nq_daily.csv", index_col="date", parse_dates=True)
     es = pd.read_csv("data/raw/es_daily.csv", index_col="date", parse_dates=True)
@@ -39,8 +60,12 @@ if __name__ == "__main__":
     es_log = np.log(es["close"])
 
     fit = fit_ols(nq_log, es_log)
+    eg = eg_cointegration(nq_log, es_log)
 
-    run_adf(fit["spread"], "Spread (NQ log price - ES log price)")
+    print("--- Engle-Granger cointegration test (NQ log price on ES log price) ---")
+    print(f"  EG statistic  : {eg['stat']:.4f}")
+    print(f"  p-value       : {eg['p_value']:.4f}")
+    print("  Critical values (1%, 5%, 10%):", eg["crit_values"])
     print(f"Beta (slope coefficient): {fit['beta']}")
     print(f"Alpha (intercept): {fit['alpha']}")
 

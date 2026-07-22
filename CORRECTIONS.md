@@ -44,7 +44,7 @@ treatment as fixes A-D.
 
 ## Pre-fix numbers (verbatim, before any correction)
 
-### Cointegration screen (Section 11) — plain ADF critical values on residuals (Fix C not yet applied)
+### Cointegration screen (Section 11) — plain ADF critical values on residuals (WRONG, Fix C not yet applied)
 
 | Pair | Beta | Alpha | ADF p-value | Cointegrated (p&lt;0.10) |
 |------|------|-------|-------------|--------------------------|
@@ -54,6 +54,26 @@ treatment as fixes A-D.
 | RTY/NQ | 1.4700 | -1.5184 | 0.1436 | False |
 | RTY/YM | 0.9253 | 3.4516 | 0.3527 | False |
 | NQ/YM | 0.5897 | 4.7914 | 0.0007 | True |
+
+### Cointegration screen (Section 11) — corrected, Engle-Granger/MacKinnon critical values (Fix C)
+
+| Pair | Beta | Alpha | EG p-value | Cointegrated (p&lt;0.10) |
+|------|------|-------|------------|--------------------------|
+| ES/NQ | 1.2384 | -0.7949 | 0.0882 | True |
+| ES/YM | 0.7544 | 4.1187 | 0.0010 | True |
+| ES/RTY | 0.6258 | 2.3210 | 0.4560 | False |
+| RTY/NQ | 1.4700 | -1.5184 | 0.3286 | False |
+| RTY/YM | 0.9253 | 3.4516 | 0.6015 | False |
+| NQ/YM | 0.5897 | 4.7914 | 0.0041 | True |
+
+**Which pairs clear the p&lt;0.10 bar is unchanged** (ES/NQ/YM cointegrate, RTY doesn't), but
+ES/NQ's own number was overstated by more than 3x (0.026 vs the real 0.088) — and 0.088 is
+barely under the 10% threshold, not "real but not overwhelming" as originally framed. Also
+worth noting for the write-up: under the corrected numbers, the walk-forward edge was found
+on the *weakest*-cointegrated pair (ES/NQ, p=0.088) and was absent on the two that cointegrate
+far more strongly (ES/YM p=0.001, NQ/YM p=0.004) — an inversion worth a paragraph either way
+this lands, since it's either a hint the ES/NQ result was noise, or evidence that strength of
+cointegration and tradeable divergence aren't the same property.
 
 ### Walk-forward + bootstrap significance (Sections 6-8, 12) — Fixes A, B, D not yet applied
 
@@ -78,5 +98,5 @@ To be populated from `data/processed/snapshot_*.csv` after each commit in Step 3
 | baseline (pre-fix) | 0.3096 | 0.0770 | matches table above |
 | + Fix A (lag) | 0.2764 | 0.1920 | Sharpe barely moved, p-value alone crossed above the 10% threshold |
 | + Fix B (beta look-ahead) | 0.2818 | 0.1854 | small movement, as expected for a same-day-only look-ahead |
-| + Fix C (EG critical values) | TBD | TBD | screen only, no effect expected here |
+| + Fix C (EG critical values) | 0.2818 | 0.1854 | unchanged, as expected -- this fix only touches the cointegration screen, not the walk-forward table |
 | + Fix D (R correction) | TBD | TBD | expected to move the most |
